@@ -7,9 +7,39 @@
   Programmer:AVRISP mkⅡ
   ---------------------------------------------*/
 
-#include <Servo.h>
+//serial communication setting
+#include <SoftwareSerial.h>
+int bluetoothRx = 8;
+int bluetoothTx = 9;
+
+SoftwareSerial arm2tooth(bluetoothRx,bluetoothTx);
+
+//そのうちアプリケーションが出来たらString型のデータでやりとりしたい
+/*
+void stringWrite(String txt)
+{
+  int i = 0;
+  for(i = 0;i < txt.length(); i++)
+  {
+    arm2tooth.write(txt.charAt(i);
+  }
+}
+
+String stringRead()
+{
+  String txt = "";
+  while(arm2tooth.available())
+  {
+    delay(50);
+    char inputhcar = arm2tooth.read();
+    txt = String(txt + inputchar);
+  }
+}
+*/
 
 //Motor angle setting
+#include <Servo.h>
+
 #define thumbExtend   158
 #define thumbPinch    60
 #define IndexExtend   150   //extend
@@ -31,7 +61,7 @@ int swCount0    = 0;  //キャリブスイッチ用カウント変数
 //int swCount1    = 0;  //未使用
 int swCount2    = 0;  //ThumbPinの入力時に使うカウント用変数
 int swCount3    = 0;  //FingerPinの入力時に使うカウント用変数
-int swCountThr  = 6;
+int swCountThr  = 6; //スイッチが押されたと判断するループ数
 
 int sensorValue = 0;  // value read from the sensor
 int sensorMax   = 700;
@@ -62,7 +92,8 @@ Servo myservo2;   //controls thumb
 
 void setup() {
   
-  Serial.begin(9600);
+  //Serial.begin(9600);
+  arm2tooth.begin(115200);
 
   pinMode(calibPin0, INPUT);
   digitalWrite(calibPin0, HIGH);
@@ -87,7 +118,8 @@ void loop() {
     myservo0.write(IndexExtend);    //indexサーボを初期位置にする。
     myservo1.write(middleExtend);   //middleサーボを初期位置にする。
     myservo2.write(thumbExtend);    //Thumb open
-    Serial.println("Waiting for Calibration...");
+    //Serial.println("Waiting for Calibration...");
+    arm2tooth.println("Waiting for Calibration...");
     delay(10);
     if (digitalRead(calibPin0) == LOW) {
       calibration();
@@ -115,7 +147,7 @@ void loop() {
       swCount2 = 0;
       thumbPinState = !thumbPinState;
       while (digitalRead(thumbPin) == LOW) {
-        delay(1);
+        delay(1); //ボタンを押している間すすまない
       }
     }
 
@@ -131,6 +163,24 @@ void loop() {
     }
 
     //status
+    arm2tooth.print("Min=");
+    arm2tooth.print(sensorMin);
+    arm2tooth.print(",Max=");
+    arm2tooth.print(sensorMax);
+    arm2tooth.print(",Value=");
+    arm2tooth.print(sensorValue);
+    arm2tooth.print(",thumb=");
+    arm2tooth.print(thumbPinState);
+    arm2tooth.print(",finger=");
+    arm2tooth.print(fingerPinState);
+    arm2tooth.print(",indexPos=");
+    arm2tooth.print(indexPos);
+    arm2tooth.print(",thumb=");
+    arm2tooth.print(swCount3);
+    arm2tooth.print(",speed=");
+    arm2tooth.println(speed);
+
+    /*
     Serial.print("Min=");
     Serial.print(sensorMin);
     Serial.print(",Max=");
@@ -147,11 +197,7 @@ void loop() {
     Serial.print(swCount3);
     Serial.print(",speed=");
     Serial.print(speed);
-
-    Serial.print(",thumbPinState=");
-    Serial.print(thumbPinState);
-    Serial.print(",fingerPinState=");
-    Serial.println(fingerPinState);
+    */
 
     //calculate speed
     if (sensorValue < (sensorMin + (sensorMax - sensorMin) / 8)) speed = speedRev;
@@ -211,9 +257,11 @@ void calibration() {
   myservo1.write(middleFlex);   //middleサーボを初期位置にする。
   myservo2.write(thumbExtend);  //Thumb open
 
-  Serial.println("please wait...");
+  arm2tooth.println("please wait...");
+  //Serial.println("please wait...");
   delay(500);
-  Serial.println("start");
+  arm2tooth.println("start");
+  //Serial.println("start");
 
   sensorMin = ReadSens_and_Condition();
   sensorMax = sensorMin + 1;
@@ -248,6 +296,22 @@ void calibration() {
     indexPos = map(position, positionMin, positionMax, IndexExtend, IndexFlex);
     myservo0.write(indexPos);
 
+    arm2tooth.print("Min=");
+    arm2tooth.print(sensorMin);
+    arm2tooth.print(",Min_temp=");
+    arm2tooth.print(sensorMin_temp);
+    arm2tooth.print(",Max=");
+    arm2tooth.print(sensorMax);
+    arm2tooth.print(",Value=");
+    arm2tooth.print(sensorValue);
+    arm2tooth.print(",time=");
+    arm2tooth.print(time);
+    arm2tooth.print(",millis=");
+    arm2tooth.print(millis());
+    arm2tooth.print("Button=");
+    arm2tooth.println(digitalRead(calibPin0));
+
+    /*
     Serial.print("Min=");
     Serial.print(sensorMin);
     Serial.print(",Min_temp=");
@@ -262,7 +326,7 @@ void calibration() {
     Serial.print(millis());
     Serial.print("Button=");
     Serial.println(digitalRead(calibPin0));
-
+    */
   } //while
   
   sensorMin += (sensorMax - sensorMin) / 4;
