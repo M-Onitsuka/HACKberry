@@ -1,7 +1,7 @@
 /*---------------------------------------------
   HACKberryプログラム
   exiii Inc. 小笠原佑樹
-  最終更新日：2016/8/22
+  最終更新日：2017/3/21 鬼塚盛宇
 
   Board:Arduino/Genuino Micro
   Programmer:AVRISP mkⅡ
